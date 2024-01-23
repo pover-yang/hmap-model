@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.nn.functional import binary_cross_entropy_with_logits
 
 
 class FocalLoss(nn.Module):
@@ -10,7 +10,7 @@ class FocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, pred, target):
-        bce_loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+        bce_loss = binary_cross_entropy_with_logits(pred, target, reduction="none")
         pred_s = torch.sigmoid(pred)
         p_t = pred_s * target + (1 - pred_s) * (1 - target)
         if self.alpha != 0.5:

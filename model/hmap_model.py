@@ -1,13 +1,13 @@
 import cv2
-import lightning as L
 import torch
+from lightning import LightningModule
 
 from model.loss import FocalLoss
 from model.unet import UNet
 from utils import visualize_batch_hmaps, warmup_lr
 
 
-class LitHMapModel(L.LightningModule):
+class LitHMapModel(LightningModule):
     def __init__(self, init_lr, gamma, alpha, predict_dataloader=None, **model_conf):
         super().__init__()
         self.generator = UNet(**model_conf)

@@ -1,16 +1,16 @@
-import torch
-import tqdm
 from collections import OrderedDict
 
-from mqbench.prepare_by_platform import prepare_by_platform  # add quant nodes for specific Backend
+import torch
+import tqdm
+from mqbench.convert_deploy import convert_deploy  # remove quant nodes for deploy
 from mqbench.prepare_by_platform import BackendType  # contain various Backend, like TensorRT, NNIE, etc.
+from mqbench.prepare_by_platform import prepare_by_platform  # add quant nodes for specific Backend
 from mqbench.utils.state import enable_calibration  # turn on calibration algorithm, determine scale, zero_point, etc.
 from mqbench.utils.state import enable_quantization  # turn on actually quantization, like FP32 -> INT8
-from mqbench.convert_deploy import convert_deploy  # remove quant nodes for deploy
 
-from model.unet import UNet
-from model.loss import FocalLoss
 from dataset.hmap_dataset import HeatMapDataModule
+from model.loss import FocalLoss
+from model.unet import UNet
 
 
 class UNetTrans(UNet):
@@ -54,7 +54,7 @@ def post_train_quant(model_path):
     enable_calibration(model)  # turn on calibration, ready for gathering data
     for batch_idx, (data, target) in enumerate(dataloader):
         # run the training step
-        output = model(data)
+        _ = model(data)
 
         print(batch_idx, end=' ', flush=True)
         if batch_idx >= 200:
@@ -64,7 +64,7 @@ def post_train_quant(model_path):
     enable_quantization(model)  # turn on actually quantization, ready for simulating Backend inference
     for batch_idx, (data, target) in enumerate(dataloader):
         # run the forward step
-        output = model(data)
+        _ = model(data)
 
     # 6. Convert to deploy
     input_shape = {'data': [1, 1, 400, 640]}
@@ -149,11 +149,11 @@ def export_model(model_path):
 
     model_prepared.eval()
 
-    loss_fn = FocalLoss()
+    _ = FocalLoss()
     enable_calibration(model_prepared)
     for batch_idx, (image, target) in tqdm.tqdm(enumerate(dataloader)):
         # run the training step
-        output = model_prepared(image)
+        _ = model_prepared(image)
         # loss = loss_fn(output, target)
         # tqdm.tqdm.write(f'loss: {loss.item():.6f}', nolock=True)
         if batch_idx >= 50:
@@ -162,15 +162,15 @@ def export_model(model_path):
     enable_quantization(model_prepared)
     for batch_idx, (image, target) in tqdm.tqdm(enumerate(dataloader)):
         # run the training step
-        output = model_prepared(image)
+        _ = model_prepared(image)
         # loss = loss_fn(output, target)
         # tqdm.tqdm.write(f'loss: {loss.item():.6f}', nolock=True)
         if batch_idx >= 50:
             break
 
     input_shape = {'data': [1, 1, 400, 640]}
-    convert_deploy(model_prepared, backend,
-                   input_shape, model_name='hmap-v1-qat')  # remove quant nodes, ready for deploying to real-world hardware
+    # remove quant nodes, ready for deploying to real-world hardware
+    convert_deploy(model_prepared, backend, input_shape, model_name='hmap-v1-qat')
 
 
 def main():

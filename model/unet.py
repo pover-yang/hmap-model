@@ -57,15 +57,6 @@ class DoubleConv(nn.Module):
         return self.double_conv(x)
 
 
-class OutConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(OutConv, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-
-    def forward(self, x):
-        return self.conv(x)
-
-
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
@@ -95,3 +86,10 @@ class Up(nn.Module):
         return out
 
 
+class OutConv(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(OutConv, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+
+    def forward(self, x):
+        return self.conv(x)

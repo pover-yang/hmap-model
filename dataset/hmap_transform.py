@@ -4,7 +4,9 @@ import cv2
 import numpy
 import numpy as np
 import torch
-import torchvision.transforms.functional as TF
+from torchvision.transforms.functional import to_tensor, normalize, to_pil_image, \
+    adjust_brightness, adjust_contrast, gaussian_blur, \
+    hflip, vflip, rotate, crop, resize
 
 
 class HeatMapTransform(torch.nn.Module):
@@ -25,10 +27,10 @@ class HeatMapTransform(torch.nn.Module):
         if instances is not None:
             # Generate heatmap by instances and image
             hmap = self.generate_hmap(instances, image)
-            gt_tensor = TF.to_tensor(hmap)
+            gt_tensor = to_tensor(hmap)
             in_tensor = self.norm_to_tensor(image)
         else:
-            gt_tensor = TF.to_tensor(image)  # Set gt as image for convenience in inference when instances is None
+            gt_tensor = to_tensor(image)  # Set gt as image for convenience in inference when instances is None
             in_tensor = self.norm_to_tensor(image)
 
         # Random geometric transformation and resize image and heatmap
@@ -42,46 +44,46 @@ class HeatMapTransform(torch.nn.Module):
     @staticmethod
     def random_jitter(image):
         # To tensor
-        image = TF.to_tensor(image)
-        
+        image = to_tensor(image)
+
         # Random adjust image's brightness, contrast, blur
         if random.random() < 0.2:
             factor = random.uniform(0.5, 2)
-            image = TF.adjust_brightness(image, factor)
+            image = adjust_brightness(image, factor)
         if random.random() < 0.2:
             factor = random.uniform(0.5, 2)
-            image = TF.adjust_contrast(image, factor)
+            image = adjust_contrast(image, factor)
         if random.random() < 0.2:
             ksize = random.choice((3, 7, 11))
-            image = TF.gaussian_blur(image, kernel_size=[ksize, ksize])
+            image = gaussian_blur(image, kernel_size=[ksize, ksize])
 
         # To numpy array
-        image = TF.to_pil_image(image)
+        image = to_pil_image(image)
         image = np.array(image)
         return image
 
     def norm_to_tensor(self, image):
         # ToTensor and Normalize
-        image = TF.to_tensor(image)
-        image = TF.normalize(image, mean=self.mean, std=self.std)
+        image = to_tensor(image)
+        image = normalize(image, mean=self.mean, std=self.std)
         return image
 
     def geometric_trans(self, img_tensor, hmap_tensor):
         # Random horizontal flip
         if random.random() < 0.5:
-            img_tensor = TF.hflip(img_tensor)
-            hmap_tensor = TF.hflip(hmap_tensor) if hmap_tensor is not None else None
+            img_tensor = hflip(img_tensor)
+            hmap_tensor = hflip(hmap_tensor) if hmap_tensor is not None else None
 
         # Random vertical flip
         if random.random() < 0.5:
-            img_tensor = TF.vflip(img_tensor)
-            hmap_tensor = TF.vflip(hmap_tensor) if hmap_tensor is not None else None
+            img_tensor = vflip(img_tensor)
+            hmap_tensor = vflip(hmap_tensor) if hmap_tensor is not None else None
 
         # Random rotation
         if random.random() < 0.2:
             angle = random.randint(-90, 90)
-            img_tensor = TF.rotate(img_tensor, angle)
-            hmap_tensor = TF.rotate(hmap_tensor, angle) if hmap_tensor is not None else None
+            img_tensor = rotate(img_tensor, angle)
+            hmap_tensor = rotate(hmap_tensor, angle) if hmap_tensor is not None else None
 
         # Random crop resize
         if random.random() < 0.8:
@@ -101,11 +103,12 @@ class HeatMapTransform(torch.nn.Module):
             offset_rate = random.uniform(-0.2, 0.2)
             dy, dx = [int(img_size[0] * offset_rate), int(img_size[1] * offset_rate)]
 
-            img_tensor = TF.crop(img_tensor, dy, dx, crop_size[0], crop_size[1])
-            hmap_tensor = TF.crop(hmap_tensor, dy, dx, crop_size[0], crop_size[1]) if hmap_tensor is not None else None
+            img_tensor = crop(img_tensor, dy, dx, crop_size[0], crop_size[1])
+            hmap_tensor = crop(hmap_tensor, dy, dx, crop_size[0], crop_size[1]) if hmap_tensor is not None else None
         # resize
-        img_tensor = TF.resize(img_tensor, [self.input_size[0], self.input_size[1]], antialias=True)
-        hmap_tensor = TF.resize(hmap_tensor, [self.input_size[0], self.input_size[1]], antialias=True) if hmap_tensor is not None else None
+        img_tensor = resize(img_tensor, [self.input_size[0], self.input_size[1]], antialias=True)
+        hmap_tensor = resize(hmap_tensor, [self.input_size[0], self.input_size[1]], antialias=True) \
+            if hmap_tensor is not None else None
         return img_tensor, hmap_tensor
 
     def aspect_resize(self, img_tensor, hmap_tensor=None):
@@ -115,11 +118,12 @@ class HeatMapTransform(torch.nn.Module):
         dx = (self.input_size[1] - scaled_w) // 2
         dy = (self.input_size[0] - scaled_h) // 2
 
-        scaled_img_tensor = TF.resize(img_tensor, [scaled_h, scaled_w], antialias=True)
+        scaled_img_tensor = resize(img_tensor, [scaled_h, scaled_w], antialias=True)
         dst_img_tensor = torch.full((1, self.input_size[0], self.input_size[1]), 0.5, dtype=torch.float32)
         dst_img_tensor[:, dy:dy + scaled_h, dx:dx + scaled_w] = scaled_img_tensor
 
-        scaled_hmap_tensor = TF.resize(hmap_tensor, [scaled_h, scaled_w], antialias=True) if hmap_tensor is not None else None
+        scaled_hmap_tensor = resize(hmap_tensor, [scaled_h, scaled_w], antialias=True) \
+            if hmap_tensor is not None else None
         if scaled_hmap_tensor is not None:
             dst_hmap_tensor = torch.zeros((3, self.input_size[0], self.input_size[1]), dtype=torch.float32)
             dst_hmap_tensor[:, dy:dy + scaled_h, dx:dx + scaled_w] = scaled_hmap_tensor
@@ -145,8 +149,8 @@ class HeatMapTransform(torch.nn.Module):
             box_x, box_y, box_w, box_h = cv2.boundingRect(rrect_pts)
             box_x1 = max(box_x, 0)
             box_y1 = max(box_y, 0)
-            box_x2 = min(box_x+box_w, img_w)
-            box_y2 = min(box_y+box_h, img_h)
+            box_x2 = min(box_x + box_w, img_w)
+            box_y2 = min(box_y + box_h, img_h)
             if box_x1 >= box_x2 or box_y1 >= box_y2:
                 continue
 
@@ -196,12 +200,12 @@ class HeatMapTransform(torch.nn.Module):
     @staticmethod
     def calc_instance_weight(gray_patch: numpy.ndarray):
         # otsu thresholding
-        thres, _ = cv2.threshold(gray_patch, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-        
+        thres, _ = cv2.threshold(gray_patch, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
         # calculate mean value of pixels less than threshold and greater than threshold
         under_thresh = gray_patch[gray_patch <= thres]
         over_thresh = gray_patch[gray_patch > thres]
-        
+
         mean_left = np.mean(under_thresh) if len(under_thresh) > 0 else 0
         mean_right = np.mean(over_thresh) if len(over_thresh) > 0 else 0
         contrast_ratio = (mean_right - mean_left) / 32

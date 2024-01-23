@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import cv2
-import lightning as L
+from lightning import LightningDataModule
 from torch.utils.data import Dataset, DataLoader
 
 from dataset.hmap_transform import HeatMapTransform
@@ -65,7 +65,7 @@ class HeatMapInferDataset(Dataset):
         return len(self.img_paths)
 
 
-class HeatMapDataModule(L.LightningDataModule):
+class HeatMapDataModule(LightningDataModule):
     def __init__(self, root_dir, input_size, batch_size):
         super().__init__()
         self.root_dir = Path(root_dir)

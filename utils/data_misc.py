@@ -1,9 +1,9 @@
+from pathlib import Path
+
 import cv2
 import numpy as np
 import tqdm
 from PIL import Image
-from pathlib import Path
-
 
 valid_pids_map = {
     (0, 0, 0, 0): 0,  # 1d
@@ -45,7 +45,7 @@ def draw_box_vertices(img, box_vertices, color=(0, 255, 0), thickness=2):
         cv2.line(img, tuple(map(int, box_vertices[i])), tuple(map(int, box_vertices[(i + 1) % 4])),
                  (0, 255, 0), 2)
         cv2.circle(img, tuple(map(int, box_vertices[i])), 2, (0, 0, 255), 2)
-        cv2.putText(img, str(i), tuple(map(int, box_vertices[i])), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 0, 255), 2)
+        cv2.putText(img, str(i), tuple(map(int, box_vertices[i])), cv2.FONT_HERSHEY_SIMPLEX, 2, color, thickness)
 
     return img
 
@@ -59,7 +59,7 @@ def blend_heatmap(img, heatmap, alpha=0.5, clamp_min=0.0, clamp_max=1.0):
     else:
         heatmap = (heatmap * 255).astype(np.uint8)
     img = cv2.cvtColor(np.asarray(img), cv2.COLOR_GRAY2RGB)
-    blended_img = cv2.addWeighted(img, 1-alpha, heatmap, alpha, 0)
+    blended_img = cv2.addWeighted(img, 1 - alpha, heatmap, alpha, 0)
     return blended_img
 
 

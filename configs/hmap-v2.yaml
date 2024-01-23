@@ -1,7 +1,7 @@
 data:
   root_dir: '/newdata/junjieyang/Datasets/barcode'
   batch_size: 16
-  input_size: [400, 640]
+  input_size: [ 400, 640 ]
 
 model:
   in_channels: 1

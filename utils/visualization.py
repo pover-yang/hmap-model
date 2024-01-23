@@ -1,9 +1,9 @@
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 import torch
 import torchvision.ops
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 id_cls_map = {0: 'Input image', 1: '1D heatmap', 2: 'QR heatmap', 3: 'DM heatmap'}
 
@@ -26,9 +26,9 @@ def visualize_batch_hmaps(hmaps_tensor, imgs_tensor):
         for i in range(3):
             hmap_ax = axes[0, i + 1]
             cbar_ax = axes[1, i + 1]
-            sns.heatmap(hmap_array[i], cmap='jet', xticklabels=False, yticklabels=False,
-                        vmin=0, vmax=1,
-                        ax=hmap_ax, cbar_ax=cbar_ax, cbar_kws={'orientation': 'horizontal'})
+            sns.heatmap(hmap_array[i], cmap='jet', xticklabels=False, yticklabels=False, vmin=0, vmax=1, ax=hmap_ax,
+                        cbar_ax=cbar_ax, cbar_kws={'orientation': 'horizontal'})
+
             hmap_ax.set_aspect('auto')
             hmap_ax.set_title(id_cls_map[i + 1])
             cbar_ax.set_aspect(1 / 40, adjustable='box')
@@ -51,7 +51,7 @@ def visualize_single_hmap(hmap_tensor, img_tensor):
     hmap_array = hmap_tensor.detach().cpu().numpy().squeeze(0)
     img_array = img_tensor.detach().cpu().numpy().squeeze(0)
 
-    blended_image = blend_img_with_hmap(hmap_array, img_array)
+    # blended_image = blend_img_with_hmap(hmap_array, img_array)
     fig, axes = plt.subplots(1, 4, figsize=(6.4 * 4, 4))
     # axes[0].imshow(blended_image)
     img_array = img_array.transpose((1, 2, 0))
@@ -83,7 +83,7 @@ def draw_img_with_labels(image, target):
         1: 'qr',
         2: 'dm'
     }
-    if type(target) == dict:
+    if isinstance(target, dict):
         label_strs = [label_name[int(x)] for x in target['labels']]
         boxes = target['boxes']
     else:
