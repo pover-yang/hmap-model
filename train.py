@@ -1,7 +1,7 @@
 from lightning import Trainer
 
-from dataset.hmap_dataset import HeatMapDataModule
-from model.hmap_model import LitHMapModel
+from dataset.hmap_dataset import HMapDataModule
+from model.hmap_model import HMapLitModel
 from utils import load_configs, load_pl_model, set_callbacks
 
 
@@ -22,11 +22,11 @@ def main(exp_name, pretrained_path=None, resume_path=None):
     configs = load_configs(f'configs/{exp_name}.yaml')
 
     # Set up data module
-    datamodule = HeatMapDataModule(**configs['data'])
+    datamodule = HMapDataModule(**configs['data'])
     datamodule.setup()
 
     # Initialize model
-    hmap_model = load_pl_model(LitHMapModel, pretrained_path, **configs['model'])
+    hmap_model = load_pl_model(HMapLitModel, pretrained_path, **configs['model'])
 
     # Initialize trainer with callbacks
     callbacks = set_callbacks(exp_name)

@@ -8,7 +8,7 @@ from mqbench.prepare_by_platform import prepare_by_platform  # add quant nodes f
 from mqbench.utils.state import enable_calibration  # turn on calibration algorithm, determine scale, zero_point, etc.
 from mqbench.utils.state import enable_quantization  # turn on actually quantization, like FP32 -> INT8
 
-from dataset.hmap_dataset import HeatMapDataModule
+from dataset.hmap_dataset import HMapDataModule
 from model.loss import FocalLoss
 from model.unet import UNet
 
@@ -38,9 +38,9 @@ def post_train_quant(model_path):
     # 1. Load model and dataloader
     model = load_model(model_path)
     model.eval()
-    datamodule = HeatMapDataModule(root_dir='/home/yjunj/Datasets/barcode',
-                                   input_size=[400, 640],
-                                   batch_size=4)
+    datamodule = HMapDataModule(root_dir='/home/yjunj/Datasets/barcode',
+                                input_size=[400, 640],
+                                batch_size=4)
     datamodule.setup()
     dataloader = datamodule.train_dataloader()
 
@@ -75,9 +75,9 @@ def quant_aware_train(model_path, num_epochs=10):
     # 1. Load model and dataloader
     model_fp32 = load_model(model_path)
     model_fp32.eval()
-    datamodule = HeatMapDataModule(root_dir='/home/yjunj/Datasets/barcode',
-                                   input_size=[400, 640],
-                                   batch_size=8)
+    datamodule = HMapDataModule(root_dir='/home/yjunj/Datasets/barcode',
+                                input_size=[400, 640],
+                                batch_size=8)
     datamodule.setup()
     dataloader = datamodule.train_dataloader()
     val_dataloader = datamodule.val_dataloader()
@@ -133,9 +133,9 @@ def train_one_epoch(model, dataloader, loss_fn, optimizer):
 def export_model(model_path):
     model_fp32 = load_model(model_path)
     model_fp32.eval()
-    datamodule = HeatMapDataModule(root_dir='/Users/yjunj/WorkSpace/Datasets/barcode',
-                                   input_size=[400, 640],
-                                   batch_size=1)
+    datamodule = HMapDataModule(root_dir='/Users/yjunj/WorkSpace/Datasets/barcode',
+                                input_size=[400, 640],
+                                batch_size=1)
     datamodule.setup()
     dataloader = datamodule.train_dataloader()
     print(len(dataloader))

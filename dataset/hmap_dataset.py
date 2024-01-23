@@ -65,7 +65,7 @@ class HeatMapInferDataset(Dataset):
         return len(self.img_paths)
 
 
-class HeatMapDataModule(LightningDataModule):
+class HMapDataModule(LightningDataModule):
     def __init__(self, root_dir, input_size, batch_size):
         super().__init__()
         self.root_dir = Path(root_dir)

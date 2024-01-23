@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import torch
 
 from dataset.hmap_transform import HeatMapTransform
-from model.hmap_model import LitHMapModel
+from model.hmap_model import HMapLitModel
 from utils import load_configs, load_pl_model, visualize_single_hmap
 
 
@@ -50,7 +50,7 @@ def main():
     configs = load_configs(f'configs/hmap-v2.yaml')
     model_path = "./test/ckpt/hmap-v2-epoch=499-val_loss=3.828e-04.ckpt"
 
-    hmap_model = load_pl_model(LitHMapModel, model_path, **configs['model'])
+    hmap_model = load_pl_model(HMapLitModel, model_path, **configs['model'])
     hmap_model.eval()
 
     image_paths = glob.glob('./test/image/test4.png')
