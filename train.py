@@ -27,6 +27,7 @@ def main(exp_name, pretrained_path=None, resume_path=None):
 
     # Initialize model
     hmap_model = load_pl_model(HMapLitModel, pretrained_path, **configs['model'])
+    hmap_model.set_predict_dataloader(datamodule.predict_dataloader)
 
     # Initialize trainer with callbacks
     callbacks = set_callbacks(exp_name)
@@ -38,4 +39,4 @@ def main(exp_name, pretrained_path=None, resume_path=None):
 
 if __name__ == '__main__':
     # Start training with experiment name
-    main('hmap-v3')
+    main('hmap-v4')
