@@ -1,7 +1,6 @@
 import glob
 
 import cv2
-import matplotlib.pyplot as plt
 import torch
 
 from dataset.hmap_transform import HeatMapTransform
@@ -9,7 +8,7 @@ from model.hmap_model import HMapLitModel
 from utils import load_configs, load_pl_model, visualize_single_hmap
 
 
-def infer_single_image(image_path, hmap_model):
+def infer_single_image(image_path, hmap_model, visualize=True):
     """
     Inference a single image.
 
@@ -33,8 +32,11 @@ def infer_single_image(image_path, hmap_model):
     hmap_tensor = torch.sigmoid(hmap_tensor)
 
     # visualize
-    visualize_single_hmap(hmap_tensor, image_tensor)
-    plt.show()
+    if visualize:
+        vis_fig = visualize_single_hmap(hmap_tensor, image_tensor)
+        vis_fig = cv2.cvtColor(vis_fig, cv2.COLOR_RGB2BGR)
+        cv2.imshow('vis_fig', vis_fig)
+        cv2.waitKey(0)
 
     return hmap_tensor
 
