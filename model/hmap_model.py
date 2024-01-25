@@ -8,7 +8,7 @@ from utils import visualize_batch_hmaps, warmup_lr
 
 
 class HMapLitModel(LightningModule):
-    def __init__(self, init_lr, gamma, alpha, predict_dataloader=None, **model_conf):
+    def __init__(self, init_lr, gamma, alpha, **model_conf):
         super().__init__()
         self.generator = UNet(**model_conf)
         self.loss = FocalLoss(gamma, alpha)
