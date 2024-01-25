@@ -95,7 +95,7 @@ class HMapDataModule(LightningDataModule):
         return DataLoader(self.hmap_val, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=8)
 
     def test_dataloader(self):
-        return DataLoader(self.hmap_test, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=8)
+        return DataLoader(self.hmap_test, batch_size=1, shuffle=False, pin_memory=True, num_workers=8)
 
     def predict_dataloader(self):
         batch_size = min(8, len(self.hmap_infer))
