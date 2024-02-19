@@ -6,7 +6,7 @@
       <paths name="junjieyang@192.168.100.202:22 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/pover/PyProjs/hmap-model" local="$PROJECT_DIR$" />
+            <mapping deploy="/PyProjs/hmap-model" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

@@ -19,7 +19,8 @@ def main(exp_name, pretrained_path=None, resume_path=None):
     """
 
     # Load experiment configurations
-    configs = load_configs(f'configs/{exp_name}.yaml')
+    config_path = f'configs/{exp_name}.yaml' if resume_path is None else f'configs/{exp_name}-resume.yaml'
+    configs = load_configs(config_path)
 
     # Set up data module
     datamodule = HMapDataModule(**configs['data'])
@@ -39,4 +40,5 @@ def main(exp_name, pretrained_path=None, resume_path=None):
 
 if __name__ == '__main__':
     # Start training with experiment name
-    main('hmap-v4')
+    main('hmap-v3',
+         resume_path="lightning_logs/version_0/checkpoints/hmap-v3-epoch=223-val_loss=7.569e-04.ckpt")
