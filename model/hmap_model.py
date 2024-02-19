@@ -18,22 +18,32 @@ class HMapLitModel(LightningModule):
         self.save_hyperparameters(ignore=['predict_dataloader'])
 
     def forward(self, x):
-        return self.generator.forward(x)
+        return self.generator(x)
 
     def training_step(self, batch, batch_idx):
-        ins_tensor, gts_tensor = batch
-        hmaps_tensor = self.generator.forward(ins_tensor)
-        loss = self.loss(hmaps_tensor, gts_tensor)
-        self.log('train_loss', loss, on_step=True,
-                 on_epoch=False, logger=True, sync_dist=True)
+        batch_in_tensor, batch_gt_tensor = batch
+        batch_hmap_tensor = self(batch_in_tensor)
+        loss = self.loss(batch_hmap_tensor, batch_gt_tensor)
+        self.log('train_loss', loss, on_step=False, on_epoch=True, logger=True, sync_dist=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        ins_tensor, gts_tensor = batch
-        hmaps_tensor = self.generator.forward(ins_tensor)
-        loss = self.loss(hmaps_tensor, gts_tensor)
-        self.log('val_loss', loss, on_step=False,
-                 on_epoch=True, logger=True, sync_dist=True)
+        batch_in_tensor, batch_gt_tensor = batch
+        batch_hmap_tensor = self(batch_in_tensor)
+        loss = self.loss(batch_hmap_tensor, batch_gt_tensor)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, logger=True, sync_dist=True, prog_bar=True)
+
+        # calculate precision and recall
+        batch_hmap_tensor = torch.sigmoid(batch_hmap_tensor)
+        tp, fp, fn = 0, 0, 0
+        for hmap_tensor, gt_tensor in zip(batch_hmap_tensor, batch_gt_tensor):
+            hmap_bboxes = hmap_to_bboxes(hmap_tensor)
+            gt_bboxes = hmap_to_bboxes(gt_tensor)
+            tp_, fp_, fn_ = calc_confusion_matrix(hmap_bboxes, gt_bboxes)
+            tp += tp_
+            fp += fp_
+            fn += fn_
+        self.test_step_outputs.append(torch.tensor([tp, fp, fn], dtype=torch.float32))
         return loss
 
     def on_validation_epoch_end(self):

@@ -8,10 +8,10 @@ import torchvision.ops
 id_cls_map = {0: 'Input image', 1: '1D heatmap', 2: 'QR heatmap', 3: 'DM heatmap'}
 
 
-def visualize_batch_hmaps(hmaps_tensor, imgs_tensor):
+def visualize_batch_hmaps(batch_hmap_tensor, batch_img_tensor):
     # TODO: call visualize_single_hmap recursively
-    hmaps_array = hmaps_tensor.detach().cpu().numpy()
-    imgs_array = imgs_tensor.detach().cpu().numpy()
+    hmaps_array = batch_hmap_tensor.detach().cpu().numpy()
+    imgs_array = batch_img_tensor.detach().cpu().numpy()
 
     imgs_with_hmap = []
     for hmap_array, img_array in zip(hmaps_array, imgs_array):
