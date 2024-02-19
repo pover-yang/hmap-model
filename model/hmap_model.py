@@ -4,7 +4,7 @@ from lightning import LightningModule
 
 from model.loss import FocalLoss
 from model.unet import UNet
-from utils import visualize_batch_hmaps, warmup_lr
+from utils import visualize_batch_hmaps, warmup_lr, hmap_to_bboxes, calc_confusion_matrix
 
 
 class HMapLitModel(LightningModule):
@@ -16,6 +16,8 @@ class HMapLitModel(LightningModule):
         self.init_lr = float(init_lr)
         self.predict_dataloader = None
         self.save_hyperparameters(ignore=['predict_dataloader'])
+
+        self.test_step_outputs = []
 
     def forward(self, x):
         return self.generator(x)
@@ -47,19 +49,47 @@ class HMapLitModel(LightningModule):
         return loss
 
     def on_validation_epoch_end(self):
-        self.inference()
+        # print precision and recall
+        tp, fp, fn = torch.stack(self.test_step_outputs).mean(dim=0)
+        self.test_step_outputs = []
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        print(f'\nPrecision: {precision:.4f}, Recall: {recall:.4f}')
+        self.log('val_precision', precision)
+        self.log('val_recall', recall)
 
-    def inference(self):
         if self.predict_dataloader is None or self.logger is None:
             return
-        batch = next(iter(self.predict_dataloader()))
-        ins_tensor, imgs_tensor = batch
-        ins_tensor = ins_tensor.to(self.device)
-        hmaps_tensor = self.generator.forward(ins_tensor)
-        hmaps_tensor = torch.sigmoid(hmaps_tensor)
-        visualize_hmaps = visualize_batch_hmaps(hmaps_tensor, imgs_tensor)
+        batch_in_tensor, batch_img_tensor = next(iter(self.predict_dataloader()))
+        batch_in_tensor = batch_in_tensor.to(self.device)
+        batch_hmap_tensor = self.generator.forward(batch_in_tensor)
+        batch_hmap_tensor = torch.sigmoid(batch_hmap_tensor)
+        visualize_hmaps = visualize_batch_hmaps(batch_hmap_tensor, batch_img_tensor)
         cv2.imwrite(
             f'{self.logger.log_dir}/hmap_{self.current_epoch}.png', visualize_hmaps)
+
+    def test_step(self, batch, batch_idx):
+        batch_in_tensor, batch_gt_tensor = batch
+        batch_hmap_tensor = self(batch_in_tensor)
+        batch_hmap_tensor = torch.sigmoid(batch_hmap_tensor)
+
+        tp, fp, fn = 0, 0, 0
+        for hmap_tensor, gt_tensor in zip(batch_hmap_tensor, batch_gt_tensor):
+            hmap_bboxes = hmap_to_bboxes(hmap_tensor)
+            gt_bboxes = hmap_to_bboxes(gt_tensor)
+            tp_, fp_, fn_ = calc_confusion_matrix(hmap_bboxes, gt_bboxes)
+            tp += tp_
+            fp += fp_
+            fn += fn_
+        self.test_step_outputs.append(torch.tensor([tp, fp, fn], dtype=torch.float32))
+        return tp, fp, fn
+
+    def on_test_epoch_end(self):
+        tp, fp, fn = torch.stack(self.test_step_outputs).mean(dim=0)
+        self.test_step_outputs = []
+        precision = tp / (tp + fp)
+        recall = tp / (tp + fn)
+        print(f'\nPrecision: {precision:.4f}, Recall: {recall:.4f}')
 
     def configure_optimizers(self):
         lr_lambda = warmup_lr(max_epochs=self.trainer.max_epochs, warmup_factor=0.1)
